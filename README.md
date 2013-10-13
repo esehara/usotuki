@@ -1,6 +1,6 @@
 # Artifact Girl -- 人工少女うそつき
 
-「ねえ、どうしてそんな悲しい顔してるの？」
+[「ねえ、どうしてそんな悲しい顔してるの？」](http://esehara.github.io/usotuki/)
 
 ## License
 
