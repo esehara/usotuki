@@ -9,7 +9,7 @@
                 :compiler
                 {:output-to "resources/js/girl.js"
                  :optimizations :whitespace
-                 :pretty-print false}}]}
+                 :pretty-print true}}]}
   :plugins [[lein-cljsbuild "0.3.3"]]
   :dependencies [
                  [prismatic/dommy "0.1.1"]
