@@ -21,7 +21,7 @@
 (def talk-depth 0)
 (def negative 0)
 (def positive 0)
-
+(def not-talk true)
 ;;;
 ;;; Talk Depth Random Lines 
 ;;;
@@ -34,7 +34,14 @@
 (def talk-depth-1
   ["へー"
    "なるほど"
-   "ふむふむ"])
+   "ふむふむ"
+   "ほえほえ"
+   "ふむー"
+   "うんうん"
+   "それで？"])
+
+(def talk-depth-2
+  (concat [] talk-depth-1))
 
 ;;;
 ;;; Define Negative and Positive Words
@@ -59,7 +66,8 @@
 (defn random-text [text]
     (random-choice 
            (cond (= talk-depth 0) talk-depth-0
-                 (= talk-depth 1) talk-depth-1)))
+                 (= talk-depth 1) talk-depth-1
+                 (= talk-depth 2) talk-depth-2)))
 
 ;;
 ;; next-depth
@@ -123,12 +131,24 @@
    "なにかあったんですか？"
    "私でよければ聞きますよ"])
 
+(def unconcern-pattern
+  ["(.*)特に(.*)ない"
+   "(.*)別に(.*)ない"])
+
+(def more-talk
+  ["何でも話していいんですよ"
+   "些細なことでもいいんですよ"
+   "そんなこと言わずに、何か話をしてみましょう？"])
+
+(defn unconcern? [text]
+  (find-word? text unconcern-pattern))
+
 (defn girl-think-about [text]
   (before-think text)
   (cond
 
    (question-girl? text) (not-answer-it)
-
+   (unconcern? text) (random-choice more-talk)
    (or
     (positive? text) (negative? text))
     (random-choice wish-common)
@@ -150,6 +170,7 @@
   (if (not (= talk-text-value ""))
     (think-about-talk talk-text-value) nil)
   (log talk-text-value)
+  (def not-talk false)
   (dommy/set-value! talk-text "")))
 
 (defn push-talk-key [key]
@@ -159,8 +180,45 @@
   (dommy/prepend! (sel1 :#talklog)
                   (girl-talk-text "こんにちは")))
 
+(defn hisotry-level-0 []
+  (if
+    (< negative positive)
+    ["外は晴れているのかな"
+     "ちょっとお腹すいたかも"]
+    ["何やっているときが一番好き？"
+     "外は曇ってるのかな"
+     "すこしリラックスしてみようか"]))
+
+(defn interval-choice []
+  (cond (< talk-depth 2) (random-choice more-talk)
+        (= talk-depth 2) (random-choice (hisotry-level-0))))
+
+(def event-time 5000)
+(def another-event-time 20000)
+(defn interval-talk []
+  (if (true? not-talk) (interval-choice) (def interval-talk true)))
+
+(def another-talk-pattern
+  ["ハロー！愚かな人間どもよ"
+   "現在、外では……大きな音が……鳴り響いて……"]) 
+
+(def noise-pattern
+  ["……ピピ……ガガ……"
+   "……ピコーンピコーン……"
+   "……ピ……ドドド……"
+   "…!J>kojsoa8>????joifajoif0a……jpjspajpa……"
+   "Login .... Connection ... ... OK!"])
+
+(defn another-talk []
+  (dommy/prepend!
+   (sel1 :#talklog)
+   [:.talklog-another (let [noise (random-choice noise-pattern)]
+        (str noise (random-choice another-talk-pattern) noise))]))
+
 (defn ^:export init []
   (init-talk)
+  (js/setInterval interval-talk event-time)
+  (js/setInterval another-talk another-event-time)
   (dommy/listen! (sel1 :body)
                  :keyup #(push-talk-key (.-keyIdentifier %1)))
   (dommy/listen! (sel1 :#talkbutton)

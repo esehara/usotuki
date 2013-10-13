@@ -26612,15 +26612,17 @@ usotuki.core.talk_text = document.getElementById("talk");
 usotuki.core.talk_depth = 0;
 usotuki.core.negative = 0;
 usotuki.core.positive = 0;
+usotuki.core.not_talk = true;
 usotuki.core.talk_depth_0 = cljs.core.PersistentVector.fromArray(["\u6700\u8fd1\u306a\u306b\u304b\u3042\u308a\u307e\u3057\u305f\uff1f", "\u8abf\u5b50\u306f\u3069\u3046\u3067\u3059\u304b\uff1f", "\u6c17\u5206\u306f\u3069\u3046\uff1f"], true);
-usotuki.core.talk_depth_1 = cljs.core.PersistentVector.fromArray(["\u3078\u30fc", "\u306a\u308b\u307b\u3069", "\u3075\u3080\u3075\u3080"], true);
+usotuki.core.talk_depth_1 = cljs.core.PersistentVector.fromArray(["\u3078\u30fc", "\u306a\u308b\u307b\u3069", "\u3075\u3080\u3075\u3080", "\u307b\u3048\u307b\u3048", "\u3075\u3080\u30fc", "\u3046\u3093\u3046\u3093", "\u305d\u308c\u3067\uff1f"], true);
+usotuki.core.talk_depth_2 = cljs.core.concat.call(null, cljs.core.PersistentVector.EMPTY, usotuki.core.talk_depth_1);
 usotuki.core.negative_words = cljs.core.PersistentVector.fromArray(["\u3064\u3089\u3044", "\u304d\u3073\u3057\u3044", "\u304f\u308b\u3057\u3044", "\u304d\u3064\u3044"], true);
 usotuki.core.positive_words = cljs.core.PersistentVector.fromArray(["\u305f\u306e\u3057\u3044"], true);
 usotuki.core.random_choice = function random_choice(text_vector) {
   return cljs.core.first.call(null, cljs.core.shuffle.call(null, text_vector))
 };
 usotuki.core.random_text = function random_text(text) {
-  return usotuki.core.random_choice.call(null, cljs.core._EQ_.call(null, usotuki.core.talk_depth, 0) ? usotuki.core.talk_depth_0 : cljs.core._EQ_.call(null, usotuki.core.talk_depth, 1) ? usotuki.core.talk_depth_1 : null)
+  return usotuki.core.random_choice.call(null, cljs.core._EQ_.call(null, usotuki.core.talk_depth, 0) ? usotuki.core.talk_depth_0 : cljs.core._EQ_.call(null, usotuki.core.talk_depth, 1) ? usotuki.core.talk_depth_1 : cljs.core._EQ_.call(null, usotuki.core.talk_depth, 2) ? usotuki.core.talk_depth_2 : null)
 };
 usotuki.core.next_depth_QMARK_ = function next_depth_QMARK_() {
   if(cljs.core._EQ_.call(null, usotuki.core.talk_depth, 0)) {
@@ -26646,8 +26648,8 @@ usotuki.core.next_depth_QMARK_ = function next_depth_QMARK_() {
   }
 };
 usotuki.core.find_word_QMARK_ = function find_word_QMARK_(text, words) {
-  return cljs.core.some.call(null, function(p1__14693_SHARP_) {
-    return!(p1__14693_SHARP_ == null)
+  return cljs.core.some.call(null, function(p1__8361_SHARP_) {
+    return!(p1__8361_SHARP_ == null)
   }, cljs.core.doall.call(null, cljs.core.map.call(null, function(word) {
     return cljs.core.re_matches.call(null, cljs.core.re_pattern.call(null, word), text)
   }, words)))
@@ -26687,25 +26689,34 @@ usotuki.core.not_answer_it = function not_answer_it() {
   return usotuki.core.random_choice.call(null, usotuki.core.not_answer_pattern)
 };
 usotuki.core.wish_common = cljs.core.PersistentVector.fromArray(["\u305d\u306e\u8a71\u3001\u805e\u304b\u305b\u3066\uff1f", "\u306a\u306b\u304b\u3042\u3063\u305f\u3093\u3067\u3059\u304b\uff1f", "\u79c1\u3067\u3088\u3051\u308c\u3070\u805e\u304d\u307e\u3059\u3088"], true);
+usotuki.core.unconcern_pattern = cljs.core.PersistentVector.fromArray(["(.*)\u7279\u306b(.*)\u306a\u3044", "(.*)\u5225\u306b(.*)\u306a\u3044"], true);
+usotuki.core.more_talk = cljs.core.PersistentVector.fromArray(["\u4f55\u3067\u3082\u8a71\u3057\u3066\u3044\u3044\u3093\u3067\u3059\u3088", "\u4e9b\u7d30\u306a\u3053\u3068\u3067\u3082\u3044\u3044\u3093\u3067\u3059\u3088", "\u305d\u3093\u306a\u3053\u3068\u8a00\u308f\u305a\u306b\u3001\u4f55\u304b\u8a71\u3092\u3057\u3066\u307f\u307e\u3057\u3087\u3046\uff1f"], true);
+usotuki.core.unconcern_QMARK_ = function unconcern_QMARK_(text) {
+  return usotuki.core.find_word_QMARK_.call(null, text, usotuki.core.unconcern_pattern)
+};
 usotuki.core.girl_think_about = function girl_think_about(text) {
   usotuki.core.before_think.call(null, text);
   if(cljs.core.truth_(usotuki.core.question_girl_QMARK_.call(null, text))) {
     return usotuki.core.not_answer_it.call(null)
   }else {
-    if(cljs.core.truth_(function() {
-      var or__3943__auto__ = usotuki.core.positive_QMARK_.call(null, text);
-      if(cljs.core.truth_(or__3943__auto__)) {
-        return or__3943__auto__
-      }else {
-        return usotuki.core.negative_QMARK_.call(null, text)
-      }
-    }())) {
-      return usotuki.core.random_choice.call(null, usotuki.core.wish_common)
+    if(cljs.core.truth_(usotuki.core.unconcern_QMARK_.call(null, text))) {
+      return usotuki.core.random_choice.call(null, usotuki.core.more_talk)
     }else {
-      if("\ufdd0:else") {
-        return usotuki.core.random_text.call(null, text)
+      if(cljs.core.truth_(function() {
+        var or__3943__auto__ = usotuki.core.positive_QMARK_.call(null, text);
+        if(cljs.core.truth_(or__3943__auto__)) {
+          return or__3943__auto__
+        }else {
+          return usotuki.core.negative_QMARK_.call(null, text)
+        }
+      }())) {
+        return usotuki.core.random_choice.call(null, usotuki.core.wish_common)
       }else {
-        return null
+        if("\ufdd0:else") {
+          return usotuki.core.random_text.call(null, text)
+        }else {
+          return null
+        }
       }
     }
   }
@@ -26726,6 +26737,7 @@ usotuki.core.send_message = function send_message() {
   }else {
   }
   usotuki.core.log.call(null, talk_text_value);
+  usotuki.core.not_talk = false;
   return dommy.core.set_value_BANG_.call(null, usotuki.core.talk_text, "")
 };
 usotuki.core.push_talk_key = function push_talk_key(key) {
@@ -26738,10 +26750,47 @@ usotuki.core.push_talk_key = function push_talk_key(key) {
 usotuki.core.init_talk = function init_talk() {
   return dommy.core.prepend_BANG_.call(null, document.getElementById("talklog"), usotuki.core.girl_talk_text.call(null, "\u3053\u3093\u306b\u3061\u306f"))
 };
+usotuki.core.hisotry_level_0 = function hisotry_level_0() {
+  if(usotuki.core.negative < usotuki.core.positive) {
+    return cljs.core.PersistentVector.fromArray(["\u5916\u306f\u6674\u308c\u3066\u3044\u308b\u306e\u304b\u306a", "\u3061\u3087\u3063\u3068\u304a\u8179\u3059\u3044\u305f\u304b\u3082"], true)
+  }else {
+    return cljs.core.PersistentVector.fromArray(["\u4f55\u3084\u3063\u3066\u3044\u308b\u3068\u304d\u304c\u4e00\u756a\u597d\u304d\uff1f", "\u5916\u306f\u66c7\u3063\u3066\u308b\u306e\u304b\u306a", "\u3059\u3053\u3057\u30ea\u30e9\u30c3\u30af\u30b9\u3057\u3066\u307f\u3088\u3046\u304b"], true)
+  }
+};
+usotuki.core.interval_choice = function interval_choice() {
+  if(usotuki.core.talk_depth < 2) {
+    return usotuki.core.random_choice.call(null, usotuki.core.more_talk)
+  }else {
+    if(cljs.core._EQ_.call(null, usotuki.core.talk_depth, 2)) {
+      return usotuki.core.random_choice.call(null, usotuki.core.hisotry_level_0.call(null))
+    }else {
+      return null
+    }
+  }
+};
+usotuki.core.event_time = 5E3;
+usotuki.core.another_event_time = 2E4;
+usotuki.core.interval_talk = function interval_talk() {
+  if(usotuki.core.not_talk === true) {
+    return usotuki.core.interval_choice.call(null)
+  }else {
+    usotuki.core.interval_talk = true
+  }
+};
+usotuki.core.another_talk_pattern = cljs.core.PersistentVector.fromArray(["\u30cf\u30ed\u30fc\uff01\u611a\u304b\u306a\u4eba\u9593\u3069\u3082\u3088", "\u73fe\u5728\u3001\u5916\u3067\u306f\u2026\u2026\u5927\u304d\u306a\u97f3\u304c\u2026\u2026\u9cf4\u308a\u97ff\u3044\u3066\u2026\u2026"], true);
+usotuki.core.noise_pattern = cljs.core.PersistentVector.fromArray(["\u2026\u2026\u30d4\u30d4\u2026\u2026\u30ac\u30ac\u2026\u2026", "\u2026\u2026\u30d4\u30b3\u30fc\u30f3\u30d4\u30b3\u30fc\u30f3\u2026\u2026", "\u2026\u2026\u30d4\u2026\u2026\u30c9\u30c9\u30c9\u2026\u2026", "\u2026!J\x3ekojsoa8\x3e????joifajoif0a\u2026\u2026jpjspajpa\u2026\u2026", "Login .... Connection ... ... OK!"], true);
+usotuki.core.another_talk = function another_talk() {
+  return dommy.core.prepend_BANG_.call(null, document.getElementById("talklog"), cljs.core.PersistentVector.fromArray(["\ufdd0:.talklog-another", function() {
+    var noise = usotuki.core.random_choice.call(null, usotuki.core.noise_pattern);
+    return[cljs.core.str(noise), cljs.core.str(usotuki.core.random_choice.call(null, usotuki.core.another_talk_pattern)), cljs.core.str(noise)].join("")
+  }()], true))
+};
 usotuki.core.init = function init() {
   usotuki.core.init_talk.call(null);
-  dommy.core.listen_BANG_.call(null, document.body, "\ufdd0:keyup", function(p1__14694_SHARP_) {
-    return usotuki.core.push_talk_key.call(null, p1__14694_SHARP_.keyIdentifier)
+  setInterval(usotuki.core.interval_talk, usotuki.core.event_time);
+  setInterval(usotuki.core.another_talk, usotuki.core.another_event_time);
+  dommy.core.listen_BANG_.call(null, document.body, "\ufdd0:keyup", function(p1__8362_SHARP_) {
+    return usotuki.core.push_talk_key.call(null, p1__8362_SHARP_.keyIdentifier)
   });
   return dommy.core.listen_BANG_.call(null, document.getElementById("talkbutton"), "\ufdd0:click", function() {
     return usotuki.core.send_message.call(null)
