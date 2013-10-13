@@ -8,8 +8,8 @@
               [{:source-paths ["src/cljs/usotuki/"]
                 :compiler
                 {:output-to "resources/js/girl.js"
-                 :optimizations :whitespace
-                 :pretty-print true}}]}
+                 :optimizations :advanced
+                 :pretty-print false}}]}
   :plugins [[lein-cljsbuild "0.3.3"]]
   :dependencies [
                  [prismatic/dommy "0.1.1"]
