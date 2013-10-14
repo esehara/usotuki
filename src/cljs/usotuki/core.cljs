@@ -1,139 +1,46 @@
 (ns usotuki.core
+  (:use
+   [usotuki.debug :only [log debug-talk-depth]]
+   [usotuki.common :only [random-choice find-word?]]
+   [usotuki.another-talk :only [another-talk]])
   (:require
+   [usotuki.talk-depth :as depth]
+   [usotuki.words :as words]
    [dommy.core :as dommy]
    [clojure.browser.event :as event])
   (:use-macros
    [dommy.macros :only [sel1]]))
 
-;;;
-;;; For Developer
-;;;
-
-(defn log [console-string]
-  "function for print debugging (legacy... :P )"
-  (.log js/console console-string))
-
-;;;
-;;; Valiables
-;;;
-
 (def talk-text (sel1 :#talk))
-(def talk-depth 0)
-(def negative 0)
-(def positive 0)
 (def not-talk true)
 
-;;;
-;;; declear talk list
-;;;
-
-(def wish-common
-  ["その話、聞かせて？"
-   "それ、少し興味があります"
-   "なにかあったんですか？"
-   "私でよければ聞きますよ"])
-
-;;;
-;;; Talk Depth Random Lines 
-;;;
-
-(def talk-depth-0
-  ["最近なにかありました？"
-   "調子はどうですか？"
-   "気分はどう？"])
-
-(def talk-depth-1
-  (concat ["へー" "なるほど" "ふむふむ" "ほえほえ" "ふむー" "ふーん" "うんうん"
-   "それで？"] wish-common))
-
-(def talk-depth-2
-  (concat [] talk-depth-1))
-
-;;;
-;;; Define Negative and Positive Words
-;;;
-
-(def negative-words
-  ["つらい" "辛い"
-   "きびしい" "厳しい"
-   "くるしい" "苦しい"
-   "きつい" "不安" "心配"])
-
-(def positive-words
-  ["たのしい" "楽しい"
-   "うれしい" "嬉しい"])
-
-;;
-;; Select Random Text with talk-depth
-;;
-
-(defn random-choice [text-vector]
-  (first (shuffle text-vector)))
-
-(defn random-text [text]
-    (random-choice 
-           (cond (= talk-depth 0) talk-depth-0
-                 (= talk-depth 1) talk-depth-1
-                 (= talk-depth 2) talk-depth-2)))
-
-;;
-;; next-depth
-;;
-
-(defn next-depth? []
-  (cond (= talk-depth 0) (def talk-depth 1)
-        (and
-         (= talk-depth 1)
-         (or (not (= negative 0))
-             (not (= positive 0)))) (def talk-depth 2)))
-
-;;
-;; Check include negative or positive words in text.
-;;
-
-(defn find-word? [text words]
-  (some #(not (nil? %1))
-    (doall (map
-      (fn [word]
-        (re-matches (re-pattern word) text)) words))))
-
-(defn negative? [text]
-  (find-word? text negative-words))
-
-(defn positive? [text]
-  (find-word? text positive-words))
+(defn negative? [text] (find-word? text words/negative))
+(defn positive? [text] (find-word? text words/positive))
 
 (defn find-negative [text]
   (if (negative? text)
     (do
-     (def negative (+ negative 1))
+     (def negative (+ talkdepth/negative 1
+                      ))
      (log "Set Negative!"))))
 
 (defn find-positive [text]
   (if (positive? text)
     (do
-     (def positive (+ positive 1))
+     (def positive (+ talkdepth/positive 1))
      (log "Set Positive!"))))
 
 (defn before-think [text]
   (find-negative text)
   (find-positive text))
 
-(def last-fix-question "[？|?]")
-
-(def im
-  "[ぼく|僕|わたし|私|おれ|俺]")
-
-(def yours
-  "[君|きみ|貴方|あなた|お前|おまえ|うそつき]")
-
 (def question-pattern-not-fix
   ["(.*)どう(.*)"
    "(.*)何か(.*)"
-   (str "(.*)" yours "は(.*)[なの|かい](.*)[なの|かい](.*)")])
+   (str "(.*)" words/yours "は(.*)[なの|かい](.*)[なの|かい](.*)")])
 
 (def question-pattern
-  (map #(str %1 last-fix-question) question-pattern-not-fix))
+  (map #(str %1 words/last-fix-question) question-pattern-not-fix))
 
 (defn question-girl? [text]
   (find-word? text question-pattern))
@@ -159,8 +66,10 @@
    "いいと思っていますよ"
    "私は嫌いじゃないですよ"])
 
+(def dom-talklog (sel1 :#talklog))
+
 (def im-pattern
-  [(str "(.*)" im "(.*)思う(.*)")])
+  [(str "(.*)" words/im "(.*)思う(.*)")])
 
 (defn unconcern? [text]
   (find-word? text unconcern-pattern))
@@ -173,19 +82,18 @@
   (cond
    (question-girl? text) (not-answer-it)
    (unconcern? text) (random-choice more-talk)
-   (or (positive? text) (negative? text)) (random-choice wish-common)
+   (or (positive? text) (negative? text)) (random-choice depth/wish-common)
    (girl-think-about-me? text) (random-choice you-are-good) 
-   :else (random-text text)))
+   :else (depth/random-text text)))
 
-(defn girl-talk-text [text]
-  [:.talklog-girl (str "「" text "」")])
+(defn girl-talk-text [text] [:.talklog-girl (str "「" text "」")])
+(defn talklog-prepend! [dom] (dommy/prepend! dom-talklog dom))
 
 (defn think-about-talk [text]
-  (let [talklog (sel1 :#talklog)]
-    (dommy/prepend! talklog [:.talklog-yours text])
-    (dommy/prepend! talklog
-                    (girl-talk-text (girl-think-about text)))
-    (next-depth?)))
+  (let [talklog dom-talklog]
+    (talklog-prepend! [:.talklog-yours text])
+    (talklog-prepend! (girl-talk-text (girl-think-about text)))
+    (depth/next? text)))
 
 (defn send-message []
   (let [talk-text-value (dommy/value talk-text)]
@@ -194,26 +102,23 @@
   (def not-talk false) (def interval-talk false)
   (dommy/set-value! talk-text "")))
 
-(defn push-talk-key [key]
-  (if (= key "Enter") (send-message) nil))
+(defn push-talk-key [key] (if (= key "Enter") (send-message) nil))
 
 (defn init-talk []
-  (dommy/prepend! (sel1 :#talklog)
-                  (girl-talk-text "こんにちは")))
+  (dommy/prepend! dom-talklog (girl-talk-text "こんにちは")))
 
 (defn hisotry-level-0 []
   (if
     (< negative positive)
-    ["外は晴れているのかな"
-     "ちょっとお腹すいたかも"]
+    ["外は晴れているのかな" "ちょっとお腹すいたかも"]
     ["何やっているときが一番好き？"
      "少し背筋を伸ばしてみましょう"
      "外は曇ってるのかな"
      "すこしリラックスしてみようか"]))
 
 (defn interval-choice []
-  (cond (< talk-depth 2) (random-choice more-talk)
-        (= talk-depth 2) (random-choice (hisotry-level-0))))
+  (cond (< talkdepth/talk-depth 2) (random-choice more-talk)
+        (= talkdepth/talk-depth 2) (random-choice (hisotry-level-0))))
 
 (def event-time 5000)
 (def another-event-time 60000)
@@ -234,38 +139,15 @@
    "消えてなくなりたい"])
 
 (defn emotion-select []
-  (cond (> negative 2) (dommy/prepend! (sel1 :#talklog)
+  (cond (> negative 2) (dommy/prepend! dom-talklog
                                       (girl-talk-text (random-choice negative-emotion-list)))))
 
 (defn flashback-talk []
   (let [select-branch (rand-int 30)]
   (cond (< select-branch 10) (emotion-select)
-         :else (cond (= talk-depth 2) (dommy/prepend! (sel1 :#talklog)
+         :else (cond (= talkdepth/talk-depth 2) (dommy/prepend! dom-talklog
                                 (girl-talk-text (random-choice flashback-list)))))))
 
-(def another-talk-pattern
-  ["ハロー！愚かな人間どもよ"
-   "あんた、今日の号外を見てないのか"
-   "またビルから……飛び降りたぞ！！"
-   "くそっ………何を考えてやがる……"
-   "まさか……あんなことになるなんて……"
-   "現在、外では……大きな音が……鳴り響いて……"]) 
-
-(def noise-pattern
-  ["……ピピ……ガガ……"
-   "……ピコーンピコーン……"
-   "……ピ……ドドド……"
-   "…………"
-   "** Remind Log **"
-   "…!J>kojsoa8>????joifajoif0a……jpjspajpa……"
-   "Login .... Connection ... ... OK! ... ..."
-   "……ザー……ザー……"])
-
-(defn another-talk []
-  (dommy/prepend!
-   (sel1 :#talklog)
-   [:.talklog-another (let [noise (random-choice noise-pattern)]
-        (str noise (random-choice another-talk-pattern) noise))]))
 
 (defn ^:export init []
   (init-talk)
@@ -276,4 +158,3 @@
                  :keyup #(push-talk-key (.-keyIdentifier %1)))
   (dommy/listen! (sel1 :#talkbutton)
                  :click #(send-message)))
-
