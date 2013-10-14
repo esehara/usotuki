@@ -37,6 +37,7 @@
    "ふむふむ"
    "ほえほえ"
    "ふむー"
+   "ふーん"
    "うんうん"
    "それで？"])
 
@@ -48,13 +49,14 @@
 ;;;
 
 (def negative-words
-  ["つらい"
-   "きびしい"
-   "くるしい"
+  ["つらい" "辛い"
+   "きびしい" "厳しい"
+   "くるしい" "苦しい"
    "きつい"])
 
 (def positive-words
-  ["たのしい"])
+  ["たのしい" "楽しい"
+   "うれしい" "嬉しい"])
 
 ;;
 ;; Select Random Text with talk-depth
@@ -112,8 +114,14 @@
   (find-negative text)
   (find-positive text))
 
+(def last-fix-question "[？|?]")
+
+(def question-pattern-not-fix
+  ["(.*)どう(.*)"
+   "(.*)君は(.*)[なの|かい](.*)[なの|かい](.*)"])
+
 (def question-pattern
-  ["(.*)どう(.*)[？|?]"])
+  (map #(str %1 last-fix-question) question-pattern-not-fix))
 
 (defn question-girl? [text]
   (find-word? text question-pattern))
@@ -128,6 +136,7 @@
 
 (def wish-common
   ["その話、聞かせて？"
+   "それ、少し興味があります"
    "なにかあったんですか？"
    "私でよければ聞きますよ"])
 
@@ -146,13 +155,9 @@
 (defn girl-think-about [text]
   (before-think text)
   (cond
-
    (question-girl? text) (not-answer-it)
    (unconcern? text) (random-choice more-talk)
-   (or
-    (positive? text) (negative? text))
-    (random-choice wish-common)
-
+   (or (positive? text) (negative? text))(random-choice wish-common)
    :else (random-text text)))
 
 (defn girl-talk-text [text]
@@ -186,6 +191,7 @@
     ["外は晴れているのかな"
      "ちょっとお腹すいたかも"]
     ["何やっているときが一番好き？"
+     "少し背筋を伸ばしてみましょう"
      "外は曇ってるのかな"
      "すこしリラックスしてみようか"]))
 
@@ -194,20 +200,51 @@
         (= talk-depth 2) (random-choice (hisotry-level-0))))
 
 (def event-time 5000)
-(def another-event-time 20000)
+(def another-event-time 60000)
+(def frashback-time 60000)
 (defn interval-talk []
   (if (true? not-talk) (interval-choice) (def interval-talk true)))
 
+(def frashback-list
+  ["暗い闇のなかに閉じ込められたことがありますか？"
+   "わけのわからない薬を飲まされそうになったから、机の中に隠してたの"
+   "多くの人々が言っていることがよくわからなくなる"
+   "なんだろう、世の中のことが無関心になって、こう、ふわっと"])
+
+(def negative-emotion-list
+  ["殺してやる！って思ったことありませんか"
+   "たまにね、神様の声が聞こえてくるの、耳からね"])
+
+(defn emotion-select []
+  (cond (> negative 3)
+        (dommy/prepend! (sel1 :#talklog)
+                        (girl-talk-text (random-choice negative-emotion-list)))))
+
+(defn frashback-talk []
+  (let [select-branch (rand-int 30)]
+   (cond (select-branch < 10) (emotion-select)
+         :else (cond
+                (= talk-depth 2)
+                (dommy/prepend! (sel1 :#talklog)
+                                (girl-talk-text (random-choice frashback-list)))))))
+
 (def another-talk-pattern
   ["ハロー！愚かな人間どもよ"
+   "あんた、今日の号外を見てないのか"
+   "またビルから……飛び降りたぞ！！"
+   "くそっ………何を考えてやがる……"
+   "まさか……あんなことになるなんて……"
    "現在、外では……大きな音が……鳴り響いて……"]) 
 
 (def noise-pattern
   ["……ピピ……ガガ……"
    "……ピコーンピコーン……"
    "……ピ……ドドド……"
+   "…………"
+   "** Remind Log **"
    "…!J>kojsoa8>????joifajoif0a……jpjspajpa……"
-   "Login .... Connection ... ... OK!"])
+   "Login .... Connection ... ... OK!"
+   "……ザー……ザー……"])
 
 (defn another-talk []
   (dommy/prepend!
@@ -219,6 +256,7 @@
   (init-talk)
   (js/setInterval interval-talk event-time)
   (js/setInterval another-talk another-event-time)
+  (js/setInterval frashback-talk frashback-time)
   (dommy/listen! (sel1 :body)
                  :keyup #(push-talk-key (.-keyIdentifier %1)))
   (dommy/listen! (sel1 :#talkbutton)
