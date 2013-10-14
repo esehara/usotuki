@@ -157,7 +157,7 @@
   (cond
    (question-girl? text) (not-answer-it)
    (unconcern? text) (random-choice more-talk)
-   (or (positive? text) (negative? text))(random-choice wish-common)
+   (or (positive? text) (negative? text)) (random-choice wish-common)
    :else (random-text text)))
 
 (defn girl-talk-text [text]
